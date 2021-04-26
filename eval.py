@@ -1,6 +1,6 @@
 import torch
-from net import RINet
-from database import evalDataset
+from net import RINet,RINet_attention
+from database import evalDataset, evalDataset_kitti360
 import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -12,11 +12,11 @@ import sys
 def eval(seq='00'):
     devicegpu=torch.device('cuda')
     devicecpu=torch.device('cpu')
-    net=RINet()
-    net.load('./model/05/model_test0.9254678778592534.pth')
+    net=RINet_attention()
+    net.load('/home/l/workspace/python/RINet/model/attention/kitti/00/model_test0.992849846782431.pth')
     net.to(device=devicegpu)
     net.eval()
-    test_dataset=evalDataset(seq)
+    test_dataset=evalDataset_kitti360(seq)
     testdataloader=DataLoader(dataset=test_dataset,batch_size=4096,shuffle=False,num_workers=8)
     pred=[]
     gt=[]
@@ -28,12 +28,12 @@ def eval(seq='00'):
             label=sample_batch['label']
             pred.extend(outlabel)
             gt.extend(label.tolist())
-    with open(seq+'.txt','w') as f:
-        for g,p in zip(gt,pred):
-            f.write(str(p)+" "+str(g)+'\n')
-
-    pred=np.array(pred,dtype='float32')
-    gt=np.array(gt,dtype='float32')
+    pred=np.nan_to_num(pred)
+    save_db=np.array([pred,gt])
+    save_db=save_db.T
+    if not os.path.exists('result'):
+        os.mkdir('result')
+    np.savetxt(os.path.join('result',seq+'.txt'),save_db,"%.4f")
     precision, recall, pr_thresholds = metrics.precision_recall_curve(gt,pred)
     plt.plot(recall, precision, color='darkorange',lw=2, label='P-R curve')
     plt.axis([0,1,0,1])

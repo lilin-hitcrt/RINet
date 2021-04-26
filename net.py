@@ -91,12 +91,82 @@ class RINet(nn.Module):
         self.load_state_dict(dict)
 
 
+class RIAttention(nn.Module):
+    def __init__(self,channels):
+        super(RIAttention,self).__init__()
+        self.channels=channels
+        self.fc=nn.Sequential(nn.Linear(in_features=self.channels,out_features=self.channels),nn.Sigmoid())
+
+    def forward(self,x):
+        x1=torch.mean(x,2)
+        w=self.fc(x1)
+        w=w.unsqueeze(2)
+        out=w*x
+        return out
+
+
+class RINet_attention(nn.Module):
+    def __init__(self):
+        super(RINet_attention,self).__init__()
+        self.conv1=nn.Sequential(RIConv(in_channels=12,out_channels=12,kernel_size=3),RIAttention(12),RIConv(in_channels=12,out_channels=16,kernel_size=3),RIAttention(16))
+        self.conv2=nn.Sequential(RIDowsampling(3),RIConv(in_channels=16,out_channels=16,kernel_size=3),RIAttention(16))
+        self.conv3=nn.Sequential(RIDowsampling(3),RIConv(in_channels=16,out_channels=32,kernel_size=3),RIAttention(32))
+        self.conv4=nn.Sequential(RIDowsampling(2),RIConv(in_channels=32,out_channels=32,kernel_size=3),RIAttention(32))
+        self.conv5=nn.Sequential(RIDowsampling(2),RIConv(in_channels=32,out_channels=64,kernel_size=3),RIAttention(64))
+        self.conv6=nn.Sequential(RIDowsampling(2),RIConv(in_channels=64,out_channels=128,kernel_size=3),RIAttention(128))
+        self.pool=AdaptiveAvgPool1d(1)
+        self.linear=nn.Sequential(nn.Linear(in_features=288,out_features=128),nn.LeakyReLU(negative_slope=0.1),nn.Linear(in_features=128,out_features=1))
+        
+    def forward(self,x,y):
+        fx=[]
+        fy=[]
+        x1=self.conv1(x)
+        y1=self.conv1(y)
+        fx.append(self.pool(x1).reshape(x.shape[0],-1))
+        fy.append(self.pool(y1).reshape(x.shape[0],-1))
+        x2=self.conv2(x1)
+        y2=self.conv2(y1)
+        fx.append(self.pool(x2).reshape(x.shape[0],-1))
+        fy.append(self.pool(y2).reshape(x.shape[0],-1))
+        x3=self.conv3(x2)
+        y3=self.conv3(y2)
+        fx.append(self.pool(x3).reshape(x.shape[0],-1))
+        fy.append(self.pool(y3).reshape(x.shape[0],-1))
+        x4=self.conv4(x3)
+        y4=self.conv4(y3)
+        fx.append(self.pool(x4).reshape(x.shape[0],-1))
+        fy.append(self.pool(y4).reshape(x.shape[0],-1))
+        x5=self.conv5(x4)
+        y5=self.conv5(y4)
+        fx.append(self.pool(x5).reshape(x.shape[0],-1))
+        fy.append(self.pool(y5).reshape(x.shape[0],-1))
+        x6=self.conv6(x5)
+        y6=self.conv6(y5)
+        fx.append(self.pool(x6).reshape(x.shape[0],-1))
+        fy.append(self.pool(y6).reshape(x.shape[0],-1))
+        featurex=torch.cat(fx,1)
+        featurey=torch.cat(fy,1)
+        diff=torch.abs(featurex-featurey)
+        # print(diff)
+        out=self.linear(diff).reshape(-1)
+        if not self.training:
+            out=torch.sigmoid(out)
+        return out
+
+    def load(self,model_file):
+        dict=torch.load(model_file)
+        self.load_state_dict(dict)
 
 
 if __name__=="__main__":
+    # net=RIAttention(2)
+    # x=torch.tensor([[[1,2,3,4,5,6],[2,3,4,5,6,7.]]])
+    # print(x)
+    # y=net(x)
+    # print(y)
     database=SigmoidDataset(['01','02','03','04','05','06','07','08','09','10'])
     test_loader=DataLoader(dataset=database,batch_size=32,shuffle=True,num_workers=8)
-    net=RINet()
+    net=RINet_attention()
     # net.load('/home/l/workspace/python/test/model/model_test0.8818544366899302.pth')
     net.eval()
     a=np.random.random(size=[32,12,360])
