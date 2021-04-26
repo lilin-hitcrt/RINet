@@ -16,8 +16,8 @@ def train():
     print(net)
     # train_dataset=SigmoidDataset1(['07','01','06','03','04','05','02','00','09','10'],1)
     # test_dataset=evalDataset('08')
-    train_dataset=SigmoidDataset_kitti360(['0000','0003','0009','0002','0004','0007','0005','0010'],1)
-    test_dataset=evalDataset_kitti360('0006')
+    train_dataset=SigmoidDataset_kitti360(['0000','0003','0007','0002','0004','0006','0005','0010'],1)
+    test_dataset=evalDataset_kitti360('0009')
     batch_size=4096
     train_loader=DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=8)
     test_loader=DataLoader(dataset=test_dataset,batch_size=4096,shuffle=False,num_workers=8)
