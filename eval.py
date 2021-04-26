@@ -16,7 +16,7 @@ def eval(seq='00'):
     net.load('/home/l/workspace/python/RINet/model/attention/kitti/00/model_test0.992849846782431.pth')
     net.to(device=devicegpu)
     net.eval()
-    test_dataset=evalDataset_kitti360(seq)
+    test_dataset=evalDataset(seq)
     testdataloader=DataLoader(dataset=test_dataset,batch_size=4096,shuffle=False,num_workers=8)
     pred=[]
     gt=[]

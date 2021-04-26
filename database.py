@@ -19,8 +19,8 @@ class SigmoidDataset1(Dataset):
         self.neg_num=0
         self.pos_num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc',seq+'.npy')
-            gt_file=os.path.join('./data/gt_nm',seq+'.npz')
+            desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
+            gt_file=os.path.join('./data/gt_kitti',seq+'.npz')
             self.descs.append(np.load(desc_file))
             gt=np.load(gt_file)
             self.gt_pos.append(gt['pos'])
@@ -59,8 +59,8 @@ class SigmoidDataset(Dataset):
         pos=[]
         num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc',seq+'.npy')
-            gt_file=os.path.join('./data/gt_sg',seq+'.npz')
+            desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
+            gt_file=os.path.join('./data/gt_kitti',seq+'.npz')
             desc_files.append(np.load(desc_file))
             gt=np.load(gt_file)
             pos.append(gt['pos'])
@@ -97,8 +97,8 @@ class evalDataset(Dataset):
         self.descs=[]
         self.pairs=[]
         self.num=0
-        desc_file=os.path.join('./data/desc',seq+'.npy')
-        pair_file=os.path.join('/media/l/yp2/pairs/neg_100',seq+'.txt')
+        desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
+        pair_file=os.path.join('./data/pairs_kitti/neg_100',seq+'.txt')
         self.descs=np.load(desc_file)
         self.pairs=np.genfromtxt(pair_file,dtype='int32')
         self.num=len(self.pairs)
@@ -163,7 +163,7 @@ class evalDataset_kitti360(Dataset):
         self.pairs=[]
         self.num=0
         desc_file=os.path.join('./data/desc_kitti360',seq+'.npy')
-        pair_file=os.path.join('/media/l/yp2/KITTI-360/pairs/neg10',seq+'.txt')
+        pair_file=os.path.join('./data/pairs_kitti360/neg10',seq+'.txt')
         self.descs=np.load(desc_file)
         self.pairs=np.genfromtxt(pair_file,dtype='int32')
         self.key_map=json.load(open(os.path.join('./data/desc_kitti360',seq+'.json')))
