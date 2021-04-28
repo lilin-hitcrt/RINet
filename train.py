@@ -7,22 +7,22 @@ from tqdm import tqdm
 from sklearn import  metrics
 from tensorboardX import SummaryWriter
 def train():
-    writer = SummaryWriter('runs/exp')
+    writer = SummaryWriter()
     device=torch.device('cuda')
     net=RINet_attention()
     # net.load('/home/l/workspace/python/test/model/08/model_test0.9675291730086251.pth')
     net.to(device=device)
     devicecpu=torch.device('cpu')
     print(net)
-    # train_dataset=SigmoidDataset1(['07','01','06','03','04','05','02','00','09','10'],1)
-    # test_dataset=evalDataset('08')
-    train_dataset=SigmoidDataset_kitti360(['0000','0003','0007','0002','0004','0006','0005','0010'],1)
-    test_dataset=evalDataset_kitti360('0009')
-    batch_size=4096
+    train_dataset=SigmoidDataset1(['00','01','03','04','05','06','07','08','09','10'],1)
+    test_dataset=evalDataset('02')
+    # train_dataset=SigmoidDataset_kitti360(['0009','0003','0007','0002','0004','0006','0000','0010'],1)
+    # test_dataset=evalDataset_kitti360('0005')
+    batch_size=1024
     train_loader=DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=8)
     test_loader=DataLoader(dataset=test_dataset,batch_size=4096,shuffle=False,num_workers=8)
     optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),lr=0.02,weight_decay=1e-6)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[10,20,30,40,50,60],gamma=0.5)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,milestones=[50,100,150,200,250,300],gamma=0.5)
     # scheduler=torch.optim.lr_scheduler.CyclicLR(optimizer,base_lr=1e-3,max_lr=1,step_size_up=2000,cycle_momentum=False)
     epoch=1000
     maxaccur=0.
