@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from tqdm import tqdm
 import json
 
+# contain 3-20 and easy positive, same distribution with train
 class SigmoidDataset1(Dataset):
     def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
         super().__init__()
@@ -48,7 +49,7 @@ class SigmoidDataset1(Dataset):
                 out={"desc1":self.descs[i-1][int(pair[0])]/50.,"desc2":self.descs[i-1][int(pair[1])]/50.,'label':pair[2]}
                 return out
         
-
+# all seqs are mixed
 class SigmoidDataset(Dataset):
     def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
         super().__init__()
@@ -91,6 +92,7 @@ class SigmoidDataset(Dataset):
         out={"desc1":self.descs[int(pair[0])]/50.,"desc2":self.descs[int(pair[1])]/50.,'label':pair[2]}
         return out
 
+# no 3-20 no easy positive, same distribution with test
 class evalDataset(Dataset):
     def __init__(self,seq="00") -> None:
         super().__init__()

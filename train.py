@@ -5,7 +5,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn import  metrics
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
+from torch.utils.tensorboard.writer import SummaryWriter
 def train():
     writer = SummaryWriter()
     device=torch.device('cuda')
