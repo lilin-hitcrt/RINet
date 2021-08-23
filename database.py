@@ -8,12 +8,7 @@ import json
 import random
 
 
-<<<<<<< HEAD
 class SigmoidDataset_eval(Dataset):
-=======
-# contain 3-20 and easy positive, same distribution with train
-class SigmoidDataset1(Dataset):
->>>>>>> b1f37916e25ae9f0be9eadcfbb1631bfc90d354c
     def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
         super().__init__()
         print(sequs)
@@ -54,7 +49,6 @@ class SigmoidDataset1(Dataset):
                 pair=self.gt_pos[i-1][idx-self.pos_nums[i-1]]
                 out={"desc1":self.descs[i-1][int(pair[0])]/50.,"desc2":self.descs[i-1][int(pair[1])]/50.,'label':pair[2]}
                 return out
-<<<<<<< HEAD
 
 
 class SigmoidDataset_train(Dataset):
@@ -100,10 +94,6 @@ class SigmoidDataset_train(Dataset):
                 return out
 
 
-=======
-        
-# all seqs are mixed
->>>>>>> b1f37916e25ae9f0be9eadcfbb1631bfc90d354c
 class SigmoidDataset(Dataset):
     def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
         super().__init__()
@@ -145,8 +135,6 @@ class SigmoidDataset(Dataset):
                 return out
         
 
-
-# no 3-20 no easy positive, same distribution with test
 class evalDataset(Dataset):
     def __init__(self,seq="00") -> None:
         super().__init__()
