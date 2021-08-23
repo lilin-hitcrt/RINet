@@ -7,9 +7,9 @@ from tqdm import tqdm
 from sklearn import  metrics
 # from tensorboardX import SummaryWriter
 from torch.utils.tensorboard.writer import SummaryWriter
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def train():
     writer = SummaryWriter()
-    device=torch.device('cuda')
     net=RINet_attention()
     net.to(device=device)
     print(net)
@@ -67,12 +67,11 @@ def train():
 
 def test(net,dataloader,datatype='test',maxaccur=0,save=True):
     net.eval()
-    devicegpu = torch.device('cuda')
     pred=[]
     gt=[]
     with torch.no_grad():
         for i_batch,sample_batch in tqdm(enumerate(dataloader),total=len(dataloader),desc="Eval",leave=False):
-            out=net(sample_batch["desc1"].to(device=devicegpu),sample_batch["desc2"].to(device=devicegpu))
+            out=net(sample_batch["desc1"].to(device=device),sample_batch["desc2"].to(device=device))
             out=out.cpu()
             outlabel=out
             label=sample_batch['label']

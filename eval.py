@@ -8,13 +8,11 @@ import os
 from sklearn import  metrics
 from matplotlib import pyplot as plt
 import sys
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
-    devicegpu=torch.device('cuda')
-    devicecpu=torch.device('cpu')
     net=RINet_attention()
     net.load(os.path.join(model_path,seq+'.pth'))
-    net.to(device=devicegpu)
+    net.to(device=device)
     net.eval()
     test_dataset=evalDataset(seq)
     testdataloader=DataLoader(dataset=test_dataset,batch_size=16384,shuffle=False,num_workers=8)
@@ -22,9 +20,8 @@ def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kit
     gt=[]
     with torch.no_grad():
         for i_batch,sample_batch in tqdm(enumerate(testdataloader),total=len(testdataloader),desc="Eval seq "+str(seq)):
-            out=net(sample_batch["desc1"].to(device=devicegpu),sample_batch["desc2"].to(device=devicegpu))
-            out=out.to(device=devicecpu)
-            outlabel=out.tolist()
+            out=net(sample_batch["desc1"].to(device=device),sample_batch["desc2"].to(device=device))
+            outlabel=out.cpu().tolist()
             label=sample_batch['label']
             pred.extend(outlabel)
             gt.extend(label.tolist())
@@ -48,8 +45,6 @@ def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kit
     plt.show()
 
 def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
-    devicegpu=torch.device('cuda')
-    devicecpu=torch.device('cpu')
     pose_file="/media/l/yp2/KITTI/odometry/dataset/poses/"+seq+".txt"
     poses=np.genfromtxt(pose_file)
     poses=poses[:,[3,11]]
@@ -70,9 +65,9 @@ def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/k
     descs/=50.0
     net=RINet_attention()
     net.load(os.path.join(model_path,seq+'.pth'))
-    net.to(device=devicegpu)
+    net.to(device=device)
     net.eval()
-    print(net)
+    # print(net)
     out_save=[]
     recall=np.array([0.]*25)
     for v in tqdm(pos_dict.keys()):
@@ -86,9 +81,8 @@ def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/k
         candidates=torch.from_numpy(candidates)
         targets=torch.from_numpy(targets)
         with torch.no_grad():
-            out=net(candidates.to(device=devicegpu),targets.to(device=devicegpu))
-            out=out.to(device=devicecpu)
-            out=out.numpy()
+            out=net(candidates.to(device=device),targets.to(device=device))
+            out=out.cpu().numpy()
             ids=np.argsort(-out)
             o=[v]
             o+=ids[:25].tolist()
@@ -108,8 +102,8 @@ def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/k
 
 
 if __name__=='__main__':
-    seq='05'
+    seq='08'
     if len(sys.argv)>1:
         seq=sys.argv[1]
-    eval(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
-    # recall(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
+    # eval(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
+    recall(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
