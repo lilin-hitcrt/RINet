@@ -1,13 +1,10 @@
 import torch
-from torch._C import device
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as  np
 import random
-
+from torch.nn.modules import linear
 from torch.nn.modules.pooling import AdaptiveAvgPool1d, AvgPool1d,MaxPool1d
-from database import SigmoidDataset
-from torch.utils.data import  DataLoader
 
 class RIConv(nn.Module):
     def __init__(self,in_channels,out_channels,kernel_size):
@@ -26,8 +23,10 @@ class RIDowsampling(nn.Module):
     def __init__(self,ratio=2):
         super(RIDowsampling,self).__init__()
         self.ratio=ratio
+        # self.pool=nn.AvgPool1d(kernel_size=ratio,stride=ratio)
     
     def forward(self,x):
+        # return self.pool(x)
         y=x[:,:,list(range(0,x.shape[2],self.ratio))].unsqueeze(1)
         for i in range(1,self.ratio):
             index=list(range(i,x.shape[2],self.ratio))
@@ -37,6 +36,19 @@ class RIDowsampling(nn.Module):
         idx=idx.unsqueeze(1).expand(x.shape[0],self.ratio)
         id_matrix=torch.tensor([list(range(self.ratio))]).expand(x.shape[0],self.ratio).to(device=x.device)
         out=y[id_matrix==idx]
+        return out
+
+class RIAttention(nn.Module):
+    def __init__(self,channels):
+        super(RIAttention,self).__init__()
+        self.channels=channels
+        self.fc=nn.Sequential(nn.Linear(in_features=self.channels,out_features=self.channels),nn.Sigmoid())
+
+    def forward(self,x):
+        x1=torch.mean(x,2)
+        w=self.fc(x1)
+        w=w.unsqueeze(2)
+        out=w*x
         return out
 
 class RINet(nn.Module):
@@ -91,20 +103,6 @@ class RINet(nn.Module):
         self.load_state_dict(dict)
 
 
-class RIAttention(nn.Module):
-    def __init__(self,channels):
-        super(RIAttention,self).__init__()
-        self.channels=channels
-        self.fc=nn.Sequential(nn.Linear(in_features=self.channels,out_features=self.channels),nn.Sigmoid())
-
-    def forward(self,x):
-        x1=torch.mean(x,2)
-        w=self.fc(x1)
-        w=w.unsqueeze(2)
-        out=w*x
-        return out
-
-
 class RINet_attention(nn.Module):
     def __init__(self):
         super(RINet_attention,self).__init__()
@@ -147,8 +145,8 @@ class RINet_attention(nn.Module):
         featurex=torch.cat(fx,1)
         featurey=torch.cat(fy,1)
         diff=torch.abs(featurex-featurey)
-        # print(diff)
         out=self.linear(diff).reshape(-1)
+        out=out.reshape(-1)
         if not self.training:
             out=torch.sigmoid(out)
         return out
@@ -158,30 +156,20 @@ class RINet_attention(nn.Module):
         self.load_state_dict(dict)
 
 
+
 if __name__=="__main__":
-    # net=RIAttention(2)
-    # x=torch.tensor([[[1,2,3,4,5,6],[2,3,4,5,6,7.]]])
-    # print(x)
-    # y=net(x)
-    # print(y)
-    database=SigmoidDataset(['01','02','03','04','05','06','07','08','09','10'])
-    test_loader=DataLoader(dataset=database,batch_size=32,shuffle=True,num_workers=8)
     net=RINet_attention()
-    # net.load('/home/l/workspace/python/test/model/model_test0.8818544366899302.pth')
     net.eval()
     a=np.random.random(size=[32,12,360])
     b=np.random.random(size=[32,12,360])
     c=np.roll(b,random.randint(1,360),2)
-    # b=np.random.randint(low=0,high=1000,size=[32,12,360])
     a=torch.from_numpy(np.array(a,dtype='float32'))
     b=torch.from_numpy(np.array(b,dtype='float32'))
     c=torch.from_numpy(np.array(c,dtype='float32'))
-    # print(a,b)
-    out1=net(b,c)
-    out2=net(c,b)
-    print(out1)
-    print(out2)
-    # print(out1-out2)
-    exit(1)
-    for i,data in enumerate(test_loader):
-        net(data['desc1'])
+    # out1,_=net(a,c)
+    # out2,_=net(a,b)
+    out3=net(c,b)
+    # print(norm.shape)
+    # print(out1)
+    # print(out2)
+    # print(out3)

@@ -127,7 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+__pycache__
 
 data
 runs
-
+result
+model

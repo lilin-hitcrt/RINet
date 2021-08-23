@@ -9,15 +9,15 @@ from sklearn import  metrics
 from matplotlib import pyplot as plt
 import sys
 
-def eval(seq='00'):
+def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
     devicegpu=torch.device('cuda')
     devicecpu=torch.device('cpu')
     net=RINet_attention()
-    net.load('/home/l/workspace/python/RINet/model/attention/kitti/00/model_test0.992849846782431.pth')
+    net.load(os.path.join(model_path,seq+'.pth'))
     net.to(device=devicegpu)
     net.eval()
     test_dataset=evalDataset(seq)
-    testdataloader=DataLoader(dataset=test_dataset,batch_size=4096,shuffle=False,num_workers=8)
+    testdataloader=DataLoader(dataset=test_dataset,batch_size=16384,shuffle=False,num_workers=8)
     pred=[]
     gt=[]
     with torch.no_grad():
@@ -47,8 +47,69 @@ def eval(seq='00'):
     print(F1_max_score)
     plt.show()
 
+def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
+    devicegpu=torch.device('cuda')
+    devicecpu=torch.device('cpu')
+    pose_file="/media/l/yp2/KITTI/odometry/dataset/poses/"+seq+".txt"
+    poses=np.genfromtxt(pose_file)
+    poses=poses[:,[3,11]]
+    inner=2*np.matmul(poses,poses.T)
+    xx=np.sum(poses**2,1,keepdims=True)
+    dis=xx-inner+xx.T
+    dis=np.sqrt(np.abs(dis))
+    id_pos=np.argwhere(dis<=5)
+    id_pos=id_pos[id_pos[:,0]-id_pos[:,1]>50]
+    pos_dict={}
+    for v in id_pos:
+        if v[0] in pos_dict.keys():
+            pos_dict[v[0]].append(v[1])
+        else:
+            pos_dict[v[0]]=[v[1]]
+    desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
+    descs=np.load(desc_file)
+    descs/=50.0
+    net=RINet_attention()
+    net.load(os.path.join(model_path,seq+'.pth'))
+    net.to(device=devicegpu)
+    net.eval()
+    print(net)
+    out_save=[]
+    recall=np.array([0.]*25)
+    for v in tqdm(pos_dict.keys()):
+        candidates=[]
+        targets=[]
+        for c in range(0,v-50):
+            candidates.append(descs[c])
+            targets.append(descs[v])
+        candidates=np.array(candidates,dtype='float32')
+        targets=np.array(targets,dtype='float32')
+        candidates=torch.from_numpy(candidates)
+        targets=torch.from_numpy(targets)
+        with torch.no_grad():
+            out=net(candidates.to(device=devicegpu),targets.to(device=devicegpu))
+            out=out.to(device=devicecpu)
+            out=out.numpy()
+            ids=np.argsort(-out)
+            o=[v]
+            o+=ids[:25].tolist()
+            out_save.append(o)
+            for i in range(25):
+                if ids[i] in pos_dict[v]:
+                    recall[i:]+=1
+                    break
+    np.savetxt(seq+'.txt',out_save,fmt='%d')
+    recall/=len(pos_dict.keys())
+    print(recall)
+    plt.plot(list(range(1,len(recall)+1)),recall,marker='o')
+    plt.axis([1,25,0,1])
+    plt.xlabel('N top retrievals')
+    plt.ylabel('Recall (%)')
+    plt.show()
+
+
 if __name__=='__main__':
-    seq='00'
+    seq='05'
     if len(sys.argv)>1:
         seq=sys.argv[1]
-    eval(seq)
+    eval(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
+    # recall(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
