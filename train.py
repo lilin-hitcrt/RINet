@@ -11,6 +11,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def train():
     writer = SummaryWriter()
     net=RINet_attention()
+    # net=RINet()
     net.to(device=device)
     print(net)
     # train_dataset=SigmoidDataset_train(['00','01','02','03','04','05','06','07','08','09','10'],1)
@@ -23,8 +24,9 @@ def train():
     train_loader=DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=6)
     test_loader=DataLoader(dataset=test_dataset,batch_size=batch_size,shuffle=False,num_workers=6)
     optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),lr=0.02,weight_decay=1e-6)
+    # optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),lr=1e-3,weight_decay=1e-6)
     scheduler=torch.optim.lr_scheduler.StepLR(optimizer,1,0.5)
-    epoch=1000
+    epoch=10
     maxaccur=0.
     batch_num=0
     for i in range(epoch):

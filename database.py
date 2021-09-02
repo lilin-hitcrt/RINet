@@ -86,12 +86,22 @@ class SigmoidDataset_train(Dataset):
             id=random.randint(0,len(self.gt_neg[id_seq])-1)
             pair=self.gt_neg[int(id_seq)][id]
             out={"desc1":self.descs[int(id_seq)][int(pair[0])]/50.,"desc2":self.descs[int(id_seq)][int(pair[1])]/50.,'label':pair[2]}
+            if random.randint(0,1)>0:
+                self.rand_occ(out["desc1"])
+                self.rand_occ(out["desc2"])
             return out
         for i in range(1,len(self.pos_nums)):
             if self.pos_nums[i]>idx:
                 pair=self.gt_pos[i-1][idx-self.pos_nums[i-1]]
                 out={"desc1":self.descs[i-1][int(pair[0])]/50.,"desc2":self.descs[i-1][int(pair[1])]/50.,'label':pair[2]}
+                if random.randint(0,1)>0:
+                    self.rand_occ(out["desc1"])
+                    self.rand_occ(out["desc2"])
                 return out
+    def rand_occ(self,in_desc):
+        n=random.randint(0,60)
+        s=random.randint(0,360-n)
+        in_desc[:,s:s+n]*=0
 
 
 class SigmoidDataset(Dataset):
@@ -126,13 +136,24 @@ class SigmoidDataset(Dataset):
             id_seq=random.randint(0,len(self.gt_neg)-1)
             id=random.randint(0,len(self.gt_neg[id_seq])-1)
             pair=self.gt_neg[int(id_seq)][id]
-            out={"desc1":self.descs[int(id_seq)][int(pair[0])]/50.,"desc2":self.descs[int(id_seq)][int(pair[1])]/50.,'label':pair[2]}
+            out={"desc1":self.descs[int(id_seq)][int(pair[0])]/50.,"desc2":self.descs[int(id_seq)][int(pair[1])]/50.,'label':pair[2]*1.}
+            if random.randint(0,2)>1:
+                self.rand_occ(out["desc1"])
+                self.rand_occ(out["desc2"])
             return out
         for i in range(1,len(self.pos_nums)):
             if self.pos_nums[i]>idx:
                 pair=self.gt_pos[i-1][idx-self.pos_nums[i-1]]
-                out={"desc1":self.descs[i-1][int(pair[0])]/50.,"desc2":self.descs[i-1][int(pair[1])]/50.,'label':pair[2]}
+                out={"desc1":self.descs[i-1][int(pair[0])]/50.,"desc2":self.descs[i-1][int(pair[1])]/50.,'label':pair[2]*1.}
+                if random.randint(0,2)>1:
+                    self.rand_occ(out["desc1"])
+                    self.rand_occ(out["desc2"])
                 return out
+
+    def rand_occ(self,in_desc):
+        n=random.randint(0,60)
+        s=random.randint(0,360-n)
+        in_desc[:,s:s+n]*=0
         
 
 class evalDataset(Dataset):
@@ -197,12 +218,22 @@ class SigmoidDataset_kitti360(Dataset):
             id=random.randint(0,len(self.gt_neg[id_seq])-1)
             pair=self.gt_neg[int(id_seq)][id]
             out={"desc1":self.descs[int(id_seq)][self.key_map[int(id_seq)][str(int(pair[0]))]]/50.,"desc2":self.descs[int(id_seq)][self.key_map[int(id_seq)][str(int(pair[1]))]]/50.,'label':pair[2]}
+            if random.randint(0,1)>0:
+                self.rand_occ(out["desc1"])
+                self.rand_occ(out["desc2"])
             return out
         for i in range(1,len(self.pos_nums)):
             if self.pos_nums[i]>idx:
                 pair=self.gt_pos[i-1][idx-self.pos_nums[i-1]]
                 out={"desc1":self.descs[i-1][self.key_map[i-1][str(int(pair[0]))]]/50.,"desc2":self.descs[i-1][self.key_map[i-1][str(int(pair[1]))]]/50.,'label':pair[2]}
+                if random.randint(0,1)>0:
+                    self.rand_occ(out["desc1"])
+                    self.rand_occ(out["desc2"])
                 return out
+    def rand_occ(self,in_desc):
+        n=random.randint(0,60)
+        s=random.randint(0,360-n)
+        in_desc[:,s:s+n]*=0
 
 class evalDataset_kitti360(Dataset):
     def __init__(self,seq="0000") -> None:

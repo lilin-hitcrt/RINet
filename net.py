@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as  np
 import random
-from torch.nn.modules import linear
+from matplotlib import pyplot as plt
 from torch.nn.modules.pooling import AdaptiveAvgPool1d, AvgPool1d,MaxPool1d
 
 class RIConv(nn.Module):
@@ -44,12 +44,19 @@ class RIAttention(nn.Module):
         self.channels=channels
         self.fc=nn.Sequential(nn.Linear(in_features=self.channels,out_features=self.channels),nn.Sigmoid())
 
+
     def forward(self,x):
         x1=torch.mean(x,2)
         w=self.fc(x1)
+        # np.save('hh.npy',w.cpu().numpy())
+        # plt.imshow(w[:12].cpu(),cmap='Reds')
+        # plt.colorbar()
+        # plt.show()
+        # plt.close()
         w=w.unsqueeze(2)
         out=w*x
         return out
+
 
 class RINet(nn.Module):
     def __init__(self):
@@ -64,36 +71,30 @@ class RINet(nn.Module):
         self.linear=nn.Sequential(nn.Linear(in_features=288,out_features=128),nn.LeakyReLU(negative_slope=0.1),nn.Linear(in_features=128,out_features=1))
         
     def forward(self,x,y):
-        fx=[]
-        fy=[]
-        x1=self.conv1(x)
-        y1=self.conv1(y)
-        fx.append(self.pool(x1).reshape(x.shape[0],-1))
-        fy.append(self.pool(y1).reshape(x.shape[0],-1))
-        x2=self.conv2(x1)
-        y2=self.conv2(y1)
-        fx.append(self.pool(x2).reshape(x.shape[0],-1))
-        fy.append(self.pool(y2).reshape(x.shape[0],-1))
-        x3=self.conv3(x2)
-        y3=self.conv3(y2)
-        fx.append(self.pool(x3).reshape(x.shape[0],-1))
-        fy.append(self.pool(y3).reshape(x.shape[0],-1))
-        x4=self.conv4(x3)
-        y4=self.conv4(y3)
-        fx.append(self.pool(x4).reshape(x.shape[0],-1))
-        fy.append(self.pool(y4).reshape(x.shape[0],-1))
-        x5=self.conv5(x4)
-        y5=self.conv5(y4)
-        fx.append(self.pool(x5).reshape(x.shape[0],-1))
-        fy.append(self.pool(y5).reshape(x.shape[0],-1))
-        x6=self.conv6(x5)
-        y6=self.conv6(y5)
-        fx.append(self.pool(x6).reshape(x.shape[0],-1))
-        fy.append(self.pool(y6).reshape(x.shape[0],-1))
-        featurex=torch.cat(fx,1)
-        featurey=torch.cat(fy,1)
-        diff=torch.abs(featurex-featurey)
-        out=self.linear(diff).reshape(-1)
+        featurexy=self.gen_feature(torch.cat([x,y],dim=0))
+        out=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
+        return out
+    
+    def gen_feature(self,xy):
+        fxy=[]
+        xy1=self.conv1(xy)
+        fxy.append(self.pool(xy1).view(xy.shape[0],-1))
+        xy2=self.conv2(xy1)
+        fxy.append(self.pool(xy2).view(xy.shape[0],-1))
+        xy3=self.conv3(xy2)
+        fxy.append(self.pool(xy3).view(xy.shape[0],-1))
+        xy4=self.conv4(xy3)
+        fxy.append(self.pool(xy4).view(xy.shape[0],-1))
+        xy5=self.conv5(xy4)
+        fxy.append(self.pool(xy5).view(xy.shape[0],-1))
+        xy6=self.conv6(xy5)
+        fxy.append(self.pool(xy6).view(xy.shape[0],-1))
+        featurexy=torch.cat(fxy,1)
+        return featurexy
+
+    def gen_score(self,fx,fy):
+        diff=torch.abs(fx-fy)
+        out=self.linear(diff).view(-1)
         if not self.training:
             out=torch.sigmoid(out)
         return out
@@ -102,11 +103,10 @@ class RINet(nn.Module):
         dict=torch.load(model_file)
         self.load_state_dict(dict)
 
-
 class RINet_attention(nn.Module):
     def __init__(self):
         super(RINet_attention,self).__init__()
-        self.conv1=nn.Sequential(RIConv(in_channels=12,out_channels=12,kernel_size=3),RIAttention(12),RIConv(in_channels=12,out_channels=16,kernel_size=3),RIAttention(16))
+        self.conv1=nn.Sequential(RIAttention(12),RIConv(in_channels=12,out_channels=12,kernel_size=3),RIAttention(12),RIConv(in_channels=12,out_channels=16,kernel_size=3),RIAttention(16))
         self.conv2=nn.Sequential(RIDowsampling(3),RIConv(in_channels=16,out_channels=16,kernel_size=3),RIAttention(16))
         self.conv3=nn.Sequential(RIDowsampling(3),RIConv(in_channels=16,out_channels=32,kernel_size=3),RIAttention(32))
         self.conv4=nn.Sequential(RIDowsampling(2),RIConv(in_channels=32,out_channels=32,kernel_size=3),RIAttention(32))
@@ -116,37 +116,30 @@ class RINet_attention(nn.Module):
         self.linear=nn.Sequential(nn.Linear(in_features=288,out_features=128),nn.LeakyReLU(negative_slope=0.1),nn.Linear(in_features=128,out_features=1))
         
     def forward(self,x,y):
-        fx=[]
-        fy=[]
-        x1=self.conv1(x)
-        y1=self.conv1(y)
-        fx.append(self.pool(x1).reshape(x.shape[0],-1))
-        fy.append(self.pool(y1).reshape(x.shape[0],-1))
-        x2=self.conv2(x1)
-        y2=self.conv2(y1)
-        fx.append(self.pool(x2).reshape(x.shape[0],-1))
-        fy.append(self.pool(y2).reshape(x.shape[0],-1))
-        x3=self.conv3(x2)
-        y3=self.conv3(y2)
-        fx.append(self.pool(x3).reshape(x.shape[0],-1))
-        fy.append(self.pool(y3).reshape(x.shape[0],-1))
-        x4=self.conv4(x3)
-        y4=self.conv4(y3)
-        fx.append(self.pool(x4).reshape(x.shape[0],-1))
-        fy.append(self.pool(y4).reshape(x.shape[0],-1))
-        x5=self.conv5(x4)
-        y5=self.conv5(y4)
-        fx.append(self.pool(x5).reshape(x.shape[0],-1))
-        fy.append(self.pool(y5).reshape(x.shape[0],-1))
-        x6=self.conv6(x5)
-        y6=self.conv6(y5)
-        fx.append(self.pool(x6).reshape(x.shape[0],-1))
-        fy.append(self.pool(y6).reshape(x.shape[0],-1))
-        featurex=torch.cat(fx,1)
-        featurey=torch.cat(fy,1)
-        diff=torch.abs(featurex-featurey)
-        out=self.linear(diff).reshape(-1)
-        out=out.reshape(-1)
+        featurexy=self.gen_feature(torch.cat([x,y],dim=0))
+        out=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
+        return out
+    
+    def gen_feature(self,xy):
+        fxy=[]
+        xy1=self.conv1(xy)
+        fxy.append(self.pool(xy1).view(xy.shape[0],-1))
+        xy2=self.conv2(xy1)
+        fxy.append(self.pool(xy2).view(xy.shape[0],-1))
+        xy3=self.conv3(xy2)
+        fxy.append(self.pool(xy3).view(xy.shape[0],-1))
+        xy4=self.conv4(xy3)
+        fxy.append(self.pool(xy4).view(xy.shape[0],-1))
+        xy5=self.conv5(xy4)
+        fxy.append(self.pool(xy5).view(xy.shape[0],-1))
+        xy6=self.conv6(xy5)
+        fxy.append(self.pool(xy6).view(xy.shape[0],-1))
+        featurexy=torch.cat(fxy,1)
+        return featurexy
+
+    def gen_score(self,fx,fy):
+        diff=torch.abs(fx-fy)
+        out=self.linear(diff).view(-1)
         if not self.training:
             out=torch.sigmoid(out)
         return out

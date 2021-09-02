@@ -8,13 +8,17 @@ import os
 from sklearn import  metrics
 from matplotlib import pyplot as plt
 import sys
+import time
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device=torch.device("cpu")
 def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
     net=RINet_attention()
     net.load(os.path.join(model_path,seq+'.pth'))
+    # net.load(os.path.join("/home/l/workspace/python/RINet/model/attention1/00.pth"))
     net.to(device=device)
     net.eval()
     test_dataset=evalDataset(seq)
+    # test_dataset=evalDataset_kitti360(seq)
     testdataloader=DataLoader(dataset=test_dataset,batch_size=16384,shuffle=False,num_workers=8)
     pred=[]
     gt=[]
@@ -42,6 +46,53 @@ def eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kit
     F1_score = np.nan_to_num(F1_score)
     F1_max_score = np.max(F1_score)
     print(F1_max_score)
+    plt.show()
+
+def fast_eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/",disc_path='./data/desc_kitti',pair_path='./data/pairs_kitti/neg_100'):
+    net=RINet_attention()
+    net.load(os.path.join(model_path,seq+'.pth'))
+    net.to(device=device)
+    net.eval()
+    print(net)
+    desc_file=os.path.join(disc_path,seq+'.npy')
+    desc_o=np.load(desc_file)/50.0
+    descs_torch=torch.from_numpy(desc_o).to(device)
+    total_time=0.
+    with torch.no_grad():
+        time1=time.time()
+        descs=net.gen_feature(descs_torch).cpu().numpy()
+        total_time+=(time.time()-time1)
+    print("feature time:",total_time)
+    pair_file=os.path.join(pair_path,seq+'.txt')
+    pairs=np.genfromtxt(pair_file,dtype='int32').reshape(-1,3)
+    # desc1=descs[pairs[:,0]]
+    # desc2=descs[pairs[:,1]]
+    # diff=desc1-desc2
+    # diff=1./np.sum(diff*diff,axis=1)
+    # diff=diff.reshape(-1,1)
+    # diff=np.nan_to_num(diff)
+    # label=pairs[:,2].reshape(-1,1)
+    # precision, recall, pr_thresholds = metrics.precision_recall_curve(label, diff)
+    desc1=torch.from_numpy(descs[pairs[:,0]]).to(device)
+    desc2=torch.from_numpy(descs[pairs[:,1]]).to(device)
+    total_time=0
+    with torch.no_grad():
+        time1=time.time()
+        scores=net.gen_score(desc1,desc2).cpu().numpy()
+        total_time+=(time.time()-time1)
+    print("score time:",total_time)
+    gt=pairs[:,2].reshape(-1,1)
+    precision, recall, pr_thresholds = metrics.precision_recall_curve(gt, scores)
+    F1_score = 2 * precision * recall / (precision + recall)
+    F1_score = np.nan_to_num(F1_score)
+    F1_max_score = np.max(F1_score)
+    print(F1_max_score)
+    plt.plot(recall, precision, color='darkorange',lw=2, label='P-R curve')
+    plt.axis([0,1,0,1])
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve')
+    plt.legend(loc="lower right")
     plt.show()
 
 def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/kitti/"):
@@ -91,7 +142,9 @@ def recall(seq='00',model_path="/home/l/workspace/python/RINet/model/attention/k
                 if ids[i] in pos_dict[v]:
                     recall[i:]+=1
                     break
-    np.savetxt(seq+'.txt',out_save,fmt='%d')
+    if not os.path.exists('result'):
+        os.mkdir('result')
+    np.savetxt(os.path.join('result',seq+'_recall.txt'),out_save,fmt='%d')
     recall/=len(pos_dict.keys())
     print(recall)
     plt.plot(list(range(1,len(recall)+1)),recall,marker='o')
@@ -105,5 +158,5 @@ if __name__=='__main__':
     seq='08'
     if len(sys.argv)>1:
         seq=sys.argv[1]
-    # eval(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
-    recall(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
+    fast_eval(seq='00',model_path="/home/l/workspace/python/RINet/model/attention1/",disc_path='./data/desc_kitti',pair_path='./data/pairs_kitti/neg_100')
+    # recall(seq,"/home/l/workspace/python/RINet/model/attention/kitti/")
