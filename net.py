@@ -23,10 +23,8 @@ class RIDowsampling(nn.Module):
     def __init__(self,ratio=2):
         super(RIDowsampling,self).__init__()
         self.ratio=ratio
-        # self.pool=nn.AvgPool1d(kernel_size=ratio,stride=ratio)
     
     def forward(self,x):
-        # return self.pool(x)
         y=x[:,:,list(range(0,x.shape[2],self.ratio))].unsqueeze(1)
         for i in range(1,self.ratio):
             index=list(range(i,x.shape[2],self.ratio))
@@ -48,11 +46,6 @@ class RIAttention(nn.Module):
     def forward(self,x):
         x1=torch.mean(x,2)
         w=self.fc(x1)
-        # np.save('hh.npy',w.cpu().numpy())
-        # plt.imshow(w[:12].cpu(),cmap='Reds')
-        # plt.colorbar()
-        # plt.show()
-        # plt.close()
         w=w.unsqueeze(2)
         out=w*x
         return out

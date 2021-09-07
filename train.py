@@ -5,10 +5,11 @@ import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn import  metrics
+import os
 # from tensorboardX import SummaryWriter
 from torch.utils.tensorboard.writer import SummaryWriter
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-def train():
+def train(seq='02'):
     writer = SummaryWriter()
     net=RINet_attention()
     # net=RINet()
@@ -16,15 +17,18 @@ def train():
     print(net)
     # train_dataset=SigmoidDataset_train(['00','01','02','03','04','05','06','07','08','09','10'],1)
     # test_dataset=SigmoidDataset_eval(['00','01','02','03','04','05','06','07','08','09','10'],1)
-    train_dataset=SigmoidDataset(['00','01','03','04','05','06','07','08','09','10'],1)
-    test_dataset=evalDataset('02')
+    # seq='0005'
+    # sequs=['0005','0009','0003','0007','0002','0004','0006','0000','0010']
+    sequs=['00','01','02','03','04','05','06','07','08','09','10']
+    sequs.remove(seq)
+    train_dataset=SigmoidDataset(sequs,1)
+    test_dataset=evalDataset(seq)
     # train_dataset=SigmoidDataset_kitti360(['0009','0003','0007','0002','0004','0006','0000','0010'],1)
     # test_dataset=evalDataset_kitti360('0005')
     batch_size=1024
     train_loader=DataLoader(dataset=train_dataset,batch_size=batch_size,shuffle=True,num_workers=6)
     test_loader=DataLoader(dataset=test_dataset,batch_size=batch_size,shuffle=False,num_workers=6)
     optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),lr=0.02,weight_decay=1e-6)
-    # optimizer=torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()),lr=1e-3,weight_decay=1e-6)
     scheduler=torch.optim.lr_scheduler.StepLR(optimizer,1,0.5)
     epoch=10
     maxaccur=0.
@@ -94,5 +98,6 @@ def test(net,dataloader,datatype='test',maxaccur=0,save=True):
             torch.save(net.state_dict(),'./model/best.pth')
         return testaccur
 
+
 if __name__=='__main__':
-    train()
+    train(seq='00')
