@@ -42,7 +42,6 @@ class RIAttention(nn.Module):
         self.channels=channels
         self.fc=nn.Sequential(nn.Linear(in_features=self.channels,out_features=self.channels),nn.Sigmoid())
 
-
     def forward(self,x):
         x1=torch.mean(x,2)
         w=self.fc(x1)
@@ -65,8 +64,8 @@ class RINet(nn.Module):
         
     def forward(self,x,y):
         featurexy=self.gen_feature(torch.cat([x,y],dim=0))
-        out=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
-        return out
+        out,diff=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
+        return out,diff
     
     def gen_feature(self,xy):
         fxy=[]
@@ -90,7 +89,7 @@ class RINet(nn.Module):
         out=self.linear(diff).view(-1)
         if not self.training:
             out=torch.sigmoid(out)
-        return out
+        return out,torch.norm(diff,dim=1)
 
     def load(self,model_file):
         dict=torch.load(model_file)
@@ -110,8 +109,8 @@ class RINet_attention(nn.Module):
         
     def forward(self,x,y):
         featurexy=self.gen_feature(torch.cat([x,y],dim=0))
-        out=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
-        return out
+        out,diff=self.gen_score(featurexy[:x.shape[0]],featurexy[x.shape[0]:])
+        return out,diff
     
     def gen_feature(self,xy):
         fxy=[]
@@ -135,11 +134,11 @@ class RINet_attention(nn.Module):
         out=self.linear(diff).view(-1)
         if not self.training:
             out=torch.sigmoid(out)
-        return out
+        return out,torch.norm(diff,dim=1)
 
     def load(self,model_file):
-        dict=torch.load(model_file)
-        self.load_state_dict(dict)
+        checkpoint=torch.load(model_file)
+        self.load_state_dict(checkpoint['state_dict'])
 
 
 
@@ -154,7 +153,8 @@ if __name__=="__main__":
     c=torch.from_numpy(np.array(c,dtype='float32'))
     # out1,_=net(a,c)
     # out2,_=net(a,b)
-    out3=net(c,b)
+    out3,diff=net(c,b)
+    print(diff)
     # print(norm.shape)
     # print(out1)
     # print(out2)

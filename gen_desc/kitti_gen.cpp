@@ -5,7 +5,11 @@
 #include "semanticConf.hpp"
 #include "genData.hpp"
 
-int main(int argvc,char** argv){
+int main(int argc,char** argv){
+    if(argc<4){
+        std::cout<<"Usage: ./kitti_gen cloud_folder label_folder output_file"<<std::endl;
+        exit(0);
+    }
     std::string cloud_path=argv[1];
     std::string label_path=argv[2];
     bool label_valid[20]={0,1,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1};

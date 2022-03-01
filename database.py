@@ -9,7 +9,7 @@ import random
 
 
 class SigmoidDataset_eval(Dataset):
-    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
+    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1,desc_folder="./data/desc_kitti",gt_folder="./data/gt_kitti",eva_ratio=0.1) -> None:
         super().__init__()
         print(sequs)
         self.descs=[]
@@ -19,12 +19,12 @@ class SigmoidDataset_eval(Dataset):
         self.neg_num=0
         self.pos_num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
-            gt_file=os.path.join('./data/gt_kitti',seq+'.npz')
+            desc_file=os.path.join(desc_folder,seq+'.npy')
+            gt_file=os.path.join(gt_folder,seq+'.npz')
             self.descs.append(np.load(desc_file))
             gt=np.load(gt_file)
-            pos=gt['pos'][-int(len(gt['pos'])/10):]
-            neg=gt['neg'][-int(len(gt['neg'])/10):]
+            pos=gt['pos'][-int(len(gt['pos'])*eva_ratio):]
+            neg=gt['neg'][-int(len(gt['neg'])*eva_ratio):]
             self.gt_pos.append(pos)
             self.gt_neg.append(neg)
             self.pos_num+=len(self.gt_pos[-1])
@@ -52,7 +52,7 @@ class SigmoidDataset_eval(Dataset):
 
 
 class SigmoidDataset_train(Dataset):
-    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
+    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1,desc_folder="./data/desc_kitti",gt_folder="./data/gt_kitti",eva_ratio=0.1) -> None:
         super().__init__()
         print(sequs)
         self.descs=[]
@@ -62,12 +62,12 @@ class SigmoidDataset_train(Dataset):
         self.neg_num=0
         self.pos_num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
-            gt_file=os.path.join('./data/gt_kitti',seq+'.npz')
+            desc_file=os.path.join(desc_folder,seq+'.npy')
+            gt_file=os.path.join(gt_folder,seq+'.npz')
             self.descs.append(np.load(desc_file))
             gt=np.load(gt_file)
-            pos=gt['pos'][:-int(len(gt['pos'])/10)]
-            neg=gt['neg'][:-int(len(gt['neg'])/10)]
+            pos=gt['pos'][:-int(len(gt['pos'])*eva_ratio)]
+            neg=gt['neg'][:-int(len(gt['neg'])*eva_ratio)]
             self.gt_pos.append(pos)
             self.gt_neg.append(neg)
             self.pos_num+=len(self.gt_pos[-1])
@@ -105,7 +105,7 @@ class SigmoidDataset_train(Dataset):
 
 
 class SigmoidDataset(Dataset):
-    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1) -> None:
+    def __init__(self,sequs=['00','01','02','03','04','05','06','07','08','09','10'],neg_ratio=1,desc_folder="./data/desc_kitti",gt_folder="./data/gt_kitti") -> None:
         super().__init__()
         print(sequs)
         self.descs=[]
@@ -115,8 +115,8 @@ class SigmoidDataset(Dataset):
         self.neg_num=0
         self.pos_num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
-            gt_file=os.path.join('./data/gt_kitti',seq+'.npz')
+            desc_file=os.path.join(desc_folder,seq+'.npy')
+            gt_file=os.path.join(gt_folder,seq+'.npz')
             self.descs.append(np.load(desc_file))
             gt=np.load(gt_file)
             self.gt_pos.append(gt['pos'])
@@ -157,13 +157,13 @@ class SigmoidDataset(Dataset):
         
 
 class evalDataset(Dataset):
-    def __init__(self,seq="00") -> None:
+    def __init__(self,seq="00",desc_folder="./data/desc_kitti",gt_folder="./data/pairs_kitti/neg_100") -> None:
         super().__init__()
         self.descs=[]
         self.pairs=[]
         self.num=0
-        desc_file=os.path.join('./data/desc_kitti',seq+'.npy')
-        pair_file=os.path.join('./data/pairs_kitti/neg_100',seq+'.txt')
+        desc_file=os.path.join(desc_folder,seq+'.npy')
+        pair_file=os.path.join(gt_folder,seq+'.txt')
         self.descs=np.load(desc_file)
         self.pairs=np.genfromtxt(pair_file,dtype='int32')
         self.num=len(self.pairs)
@@ -184,7 +184,7 @@ class evalDataset(Dataset):
         return out
 
 class SigmoidDataset_kitti360(Dataset):
-    def __init__(self,sequs=['0000','0002','0003','0004','0005','0006','0007','0009','0010'],neg_ratio=1) -> None:
+    def __init__(self,sequs=['0000','0002','0003','0004','0005','0006','0007','0009','0010'],neg_ratio=1,desc_folder="./data/desc_kitti360",gt_folder="./data/gt_kitti360") -> None:
         super().__init__()
         print(sequs)
         self.descs=[]
@@ -195,10 +195,10 @@ class SigmoidDataset_kitti360(Dataset):
         self.neg_num=0
         self.pos_num=0
         for seq in sequs:
-            desc_file=os.path.join('./data/desc_kitti360',seq+'.npy')
-            gt_file=os.path.join('./data/gt_kitti360',seq+'.npz')
+            desc_file=os.path.join(desc_folder,seq+'.npy')
+            gt_file=os.path.join(gt_folder,seq+'.npz')
             self.descs.append(np.load(desc_file))
-            self.key_map.append(json.load(open(os.path.join('./data/desc_kitti360',seq+'.json'))))
+            self.key_map.append(json.load(open(os.path.join(desc_folder,seq+'.json'))))
             gt=np.load(gt_file)
             self.gt_pos.append(gt['pos'])
             self.gt_neg.append(gt['neg'])
@@ -236,16 +236,16 @@ class SigmoidDataset_kitti360(Dataset):
         in_desc[:,s:s+n]*=0
 
 class evalDataset_kitti360(Dataset):
-    def __init__(self,seq="0000") -> None:
+    def __init__(self,seq="0000",desc_folder="./data/desc_kitti360",gt_folder="./data/pairs_kitti360/neg10") -> None:
         super().__init__()
         self.descs=[]
         self.pairs=[]
         self.num=0
-        desc_file=os.path.join('./data/desc_kitti360',seq+'.npy')
-        pair_file=os.path.join('./data/pairs_kitti360/neg10',seq+'.txt')
+        desc_file=os.path.join(desc_folder,seq+'.npy')
+        pair_file=os.path.join(gt_folder,seq+'.txt')
         self.descs=np.load(desc_file)
         self.pairs=np.genfromtxt(pair_file,dtype='int32')
-        self.key_map=json.load(open(os.path.join('./data/desc_kitti360',seq+'.json')))
+        self.key_map=json.load(open(os.path.join(desc_folder,seq+'.json')))
         self.num=len(self.pairs)
         
 
@@ -261,7 +261,7 @@ class evalDataset_kitti360(Dataset):
 
 
 if __name__=='__main__':
-    database=SigmoidDataset(['00','01','02','03','04','05','06','07','08','09','10'],2)
+    database=SigmoidDataset_train(['00','01','02','03','04','05','06','07','08','09','10'],2)
     print(len(database))
     for i in range(0,len(database)):
         idx=random.randint(0,len(database)-1)

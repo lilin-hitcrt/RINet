@@ -15,6 +15,9 @@ ${PCL_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIRS}
 ./
 )
+if (NOT YAML_CPP_LIBRARIES)
+    set(YAML_CPP_LIBRARIES yaml-cpp)
+endif ()
 target_link_libraries(gencloud
         ${PCL_LIBRARIES}
 ${YAML_CPP_LIBRARIES}
